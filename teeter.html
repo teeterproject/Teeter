@@ -1,0 +1,470 @@
+<html>
+	<head>
+		<title>TEETER</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<script src="js/three.js"></script>
+		<script>
+			var scene = new THREE.Scene();
+			scene.background = new THREE.Color().setHSL( 230.00, 0.12, 0.05 );
+			scene.fog = new THREE.Fog( scene.background, 1, 500 );
+
+			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
+
+			var renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.physicallyCorrectLights = true;
+			renderer.gammaInput = true;
+			renderer.gammaOutput = true;
+			renderer.shadowMap.enabled = true;
+			renderer.toneMapping = THREE.ReinhardToneMapping;
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+			camera.position.y = 5.5;
+			camera.position.z = 150;
+
+//			moonLight = new THREE.HemisphereLight( 0x111111, 0x111111, 0.001 );
+//			scene.add( moonLight );
+
+			playaLight = new THREE.PointLight( 0xeedd99, 2, 333, 2 );
+			playaLight.position.set( 0, 43, 0 );
+			playaLight.castShadow = true;
+			playaLight.shadow.mapSize.width = 4096;
+			playaLight.shadow.mapSize.height = 4096;
+			scene.add( playaLight );
+
+			teeterLight = new THREE.PointLight( 0x000000, 5, 155, 2 );
+			teeterLight.position.set( 0, 17, 0 );
+			teeterLight.castShadow = true;
+			teeterLight.shadow.mapSize.width = 2048;
+			teeterLight.shadow.mapSize.height = 2048;
+			scene.add( teeterLight );
+
+			boomLight3 = new THREE.PointLight( 0x000000, 3, 66, 2 );
+			boomLight3.position.set( 45, 22.5, 0 );
+			boomLight3.castShadow = true;
+			boomLight3.shadow.mapSize.width = 2048;
+			boomLight3.shadow.mapSize.height = 2048;
+			scene.add( boomLight3 );
+
+			boomLight4 = new THREE.PointLight( 0x000000, 3, 66, 2 );
+			boomLight4.position.set( -45, 22.5, 0 );
+			boomLight4.castShadow = true;
+			boomLight4.shadow.mapSize.width = 2048;
+			boomLight4.shadow.mapSize.height = 2048;
+			scene.add( boomLight4 );
+
+			boomLight5 = new THREE.PointLight( 0x000000, 3, 66, 2 );
+			boomLight5.position.set( 0, 22.5, 15 );
+			boomLight5.castShadow = true;
+			boomLight5.shadow.mapSize.width = 2048;
+			boomLight5.shadow.mapSize.height = 2048;
+			scene.add( boomLight5 );
+
+			boomLight6 = new THREE.PointLight( 0x000000, 3, 66, 2 );
+			boomLight6.position.set( 0, 22.5, -15 );
+			boomLight6.castShadow = true;
+			boomLight6.shadow.mapSize.width = 2048;
+			boomLight6.shadow.mapSize.height = 2048;
+			scene.add( boomLight6 );
+
+
+			// PLAYA
+			var playaMaterial = new THREE.MeshPhongMaterial( {color: 0xffffff, specular: 0x050505 } );
+			var playaGeometry = new THREE.PlaneBufferGeometry( 10000, 10000 );
+			playaMaterial.color.setRGB( 255, 255, 255 );
+
+			var playa = new THREE.Mesh( playaGeometry, playaMaterial );
+			playa.rotation.x = -Math.PI/2;
+			playa.position.y = 0;
+			scene.add( playa );
+			playa.receiveShadow = true;
+	
+			// TEETER Structure
+			var boomMaterial = new THREE.LineBasicMaterial({ color: 0x111111 });
+			var boomGeometry = new THREE.Geometry();
+			
+			// booms and masts
+			boomGeometry.vertices.push( new THREE.Vector3(-110, 0, 0), new THREE.Vector3(110, 0, 0) );
+			boomGeometry.vertices.push( new THREE.Vector3(0, 0, -15), new THREE.Vector3(0, 0, 15) );
+			boomGeometry.vertices.push( new THREE.Vector3(0, 22, 0), new THREE.Vector3(0, -22, 0) );
+						
+			// base supports
+			boomGeometry.vertices.push
+			(
+				new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -22, 15),
+				new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -22, -15),
+				new THREE.Vector3(0, -22, 15), new THREE.Vector3(0, -22, -15)
+			);
+
+			var booms = new THREE.LineSegments(boomGeometry, boomMaterial);
+			booms.castShadow = true;
+			booms.receiveShadow = false;
+
+			scene.add(booms);
+
+			// TEETER Cables
+			var cableMaterial = new THREE.LineBasicMaterial({ color: 0x222222 });
+			var cableGeometry = new THREE.Geometry();
+
+			// cables
+			for ( var i=-10; i < 11; i ++)
+			{
+				if ( i != 0 )
+				{
+					// vertical cables
+					cableGeometry.vertices.push( new THREE.Vector3(0, 22, 0), new THREE.Vector3(i * 11, 0, 0) );
+					cableGeometry.vertices.push( new THREE.Vector3(0, -22, 0), new THREE.Vector3(i * 11, 0, 0) );
+
+					// horizontal cables
+					cableGeometry.vertices.push( new THREE.Vector3(0, 0, 15), new THREE.Vector3(i * 11, 0, 0) );
+					cableGeometry.vertices.push( new THREE.Vector3(0, 0, -15), new THREE.Vector3(i * 11, 0, 0) );
+				}
+			}
+			// mast support cables
+			cableGeometry.vertices.push
+			(
+				new THREE.Vector3(0, 22, 0), new THREE.Vector3(0, 0, 15),
+				new THREE.Vector3(0, 22, 0), new THREE.Vector3(0, 0, -15),
+				new THREE.Vector3(0, 15, 0), new THREE.Vector3(0, 0, 15),
+				new THREE.Vector3(0, 15, 0), new THREE.Vector3(0, 0, -15),
+				new THREE.Vector3(0, 7.5, 0), new THREE.Vector3(0, 0, 15),
+				new THREE.Vector3(0, 7.5, 0), new THREE.Vector3(0, 0, -15),
+
+//				new THREE.Vector3(0, -22, 15), new THREE.Vector3(0, 0, 15),
+//				new THREE.Vector3(0, -22, -15), new THREE.Vector3(0, 0, -15)
+			);
+
+			var cables = new THREE.LineSegments(cableGeometry, cableMaterial);
+			cables.castShadow = true;
+			cables.receiveShadow = false;
+
+			scene.add(cables);
+
+			// LIGHTS
+			var lightsGeometry = new THREE.Geometry();
+			var sprite = new THREE.TextureLoader().load( "disc.png" );
+
+			var density = 8;
+			var numLights = 0;
+			
+			// 1. LVTop = left vertical top section
+			var numLVTop = 0;
+			for ( i = -1; i > -110*density; i -- )
+			{
+				for ( var j = 1; j < 11; j ++ )
+				{
+					var x = i/density;
+					var y = ( j*11 + i/density ) * ( 22/(j*11) );
+					//console.log(y);
+					if ( y > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = x; vertex.y = y; vertex.z = 0;
+						lightsGeometry.vertices.push( vertex );
+						numLVTop++; numLights++;
+					}
+				}	
+			}
+			console.log("LVTop=", numLVTop);
+
+			// 2. RVTop = right vertical top section
+			var numRVTop = 0;
+			for ( i = 1; i < 110*density; i ++ )
+			{
+				for ( var j = 1; j < 11; j ++ )
+				{
+					var x = i/density;
+					var y = ( j*11 - i/density ) * ( 22/(j*11) );
+					if ( y > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = x; vertex.y = y; vertex.z = 0;
+						lightsGeometry.vertices.push( vertex );
+						numRVTop++; numLights++;
+					}
+				}	
+			}
+			console.log("RVTop=", numRVTop);
+
+			// 3.  = left vertical bottom section
+			var numLVBot = 0;
+			for ( i = -1; i > -110*density; i -- )
+			{
+				for ( var j = 1; j < 11; j ++ )
+				{
+					var x = i/density;
+					var y = ( j*11 + i/density ) * ( 22/(j*11) );
+					if ( y > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = x; vertex.y = -y; vertex.z = 0;
+						lightsGeometry.vertices.push( vertex );
+						numLVBot++; numLights++;
+					}
+				}	
+			}
+			console.log("LVBot=", numLVBot);
+
+			// 4. RVTop = right vertical top section
+			var numRVBot = 0;
+			for ( i = 1; i < 110*density; i ++ )
+			{
+				for ( var j = 1; j < 11; j ++ )
+				{
+					var x = i/density;
+					var y = ( j*11 - i/density ) * ( 22/(j*11) );
+					if ( y > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = x; vertex.y = -y; vertex.z = 0;
+						lightsGeometry.vertices.push( vertex );
+						numRVBot++; numLights++;
+					}
+				}	
+			}
+			console.log("RVBot=", numRVTop);
+
+			// 5. LHFront = left horizontal section
+			var numLHFront = 0;
+			for ( i = -1; i > -110*density; i -- )
+			{
+				for ( var j = 1; j < 11; j ++ )
+				{
+					var x = i/density;
+					var z = ( j*11 + i/density ) * ( 15/(j*11) );
+					//console.log(y);
+					if ( z > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = x; vertex.y = 0; vertex.z = z;
+						lightsGeometry.vertices.push( vertex );
+						numLHFront++; numLights++;
+					}
+				}	
+			}
+			console.log("LHFront=", numLHFront);
+
+			// 6. RHFront = left horizontal section
+			var numRHFront = 0;
+			for ( i = 1; i < 110*density; i ++ )
+			{
+				for ( var j = 1; j < 11; j ++ )
+				{
+					var x = i/density;
+					var z = ( j*11 - i/density ) * ( 15/(j*11) );
+					//console.log(y);
+					if ( z > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = x; vertex.y = 0; vertex.z = z;
+						lightsGeometry.vertices.push( vertex );
+						numRHFront++; numLights++;
+					}
+				}	
+			}
+			console.log("RHFront=", numRHFront);
+
+			// 7. LHBack = left horizontal section
+			var numLHBack = 0;
+			for ( i = -1; i > -110*density; i -- )
+			{
+				for ( var j = 1; j < 11; j ++ )
+				{
+					var x = i/density;
+					var z = ( j*11 + i/density ) * ( 15/(j*11) );
+					//console.log(y);
+					if ( z > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = x; vertex.y = 0; vertex.z = -z;
+						lightsGeometry.vertices.push( vertex );
+						numLHBack++; numLights++;
+					}
+				}	
+			}
+			console.log("LHBack=", numLHBack);
+
+			// 8. RHFront = left horizontal section
+			var numRHBack = 0;
+			for ( i = 1; i < 110*density; i ++ )
+			{
+				for ( var j = 1; j < 11; j ++ )
+				{
+					var x = i/density;
+					var z = ( j*11 - i/density ) * ( 15/(j*11) );
+					//console.log(y);
+					if ( z > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = x; vertex.y = 0; vertex.z = -z;
+						lightsGeometry.vertices.push( vertex );
+						numRHBack++; numLights++;
+					}
+				}	
+			}
+			console.log("RHBack=", numRHBack);
+
+			// 9. Mast = mast support cables
+			var numMast = 0;
+			for ( i = 1; i < 15*density; i ++ )
+			{
+					var z = i/density;
+					var y = (15 - i/density) * (7.5/15);
+					if ( y > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = 0; vertex.y = y; vertex.z = z;
+						lightsGeometry.vertices.push( vertex );
+						numMast++; numLights++;
+					}
+			}
+			for ( i = 1; i < 15*density; i ++ )
+			{
+					var z = i/density;
+					var y = (15 - i/density);
+					if ( y > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = 0; vertex.y = y; vertex.z = z;
+						lightsGeometry.vertices.push( vertex );
+						numMast++; numLights++;
+					}
+			}
+			for ( i = 1; i < 15*density; i ++ )
+			{
+					var z = i/density;
+					var y = (15 - i/density) * (22/15);
+					if ( y > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = 0; vertex.y = y; vertex.z = z;
+						lightsGeometry.vertices.push( vertex );
+						numMast++; numLights++;
+					}
+			}
+			for ( i = -1; i > -15*density; i -- )
+			{
+					var z = i/density;
+					var y = (15 + i/density) * (7.5/15);
+					if ( y > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = 0; vertex.y = y; vertex.z = z;
+						lightsGeometry.vertices.push( vertex );
+						numMast++; numLights++;
+					}
+			}
+			for ( i = -1; i > -15*density; i -- )
+			{
+					var z = i/density;
+					var y = (15 + i/density);
+					if ( y > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = 0; vertex.y = y; vertex.z = z;
+						lightsGeometry.vertices.push( vertex );
+						numMast++; numLights++;
+					}
+			}
+			for ( i = -1; i > -15*density; i -- )
+			{
+					var z = i/density;
+					var y = (15 + i/density) * (22/15);
+					if ( y > 0)
+					{
+						var vertex = new THREE.Vector3();
+						vertex.x = 0; vertex.y = y; vertex.z = z;
+						lightsGeometry.vertices.push( vertex );
+						numMast++; numLights++;
+					}
+			}
+			console.log("Mast=", numMast)
+
+			console.log("Total Lights=", numLights);
+
+			for ( i = 0; i < numLights; i ++ )
+			{
+				lightsGeometry.colors[i] = new THREE.Color( 0x33ff33 );
+			}			
+
+			lightMaterial = new THREE.PointsMaterial( { size: 0.4, vertexColors: THREE.VertexColors, blending: THREE.AdditiveBlending, depthTest: false, transparent : true} );
+			lights = new THREE.Points( lightsGeometry, lightMaterial );
+			scene.add( lights );
+
+			// set on top of playa.
+			cables.position.y = 22;
+			booms.position.y = 22;
+			lights.position.y = 22;
+
+			var base = new THREE.Object3D();
+			base.add( booms );
+			base.add( cables );
+			base.add( lights );
+			base.add( teeterLight);
+			base.add( boomLight3);
+			base.add( boomLight4);
+			base.add( boomLight5);
+			base.add( boomLight6);
+
+			scene.add( base );
+				
+			var up = 0;
+			var animate = function () {
+				var time = Date.now() * 0.00005;
+				
+				requestAnimationFrame( animate );
+				base.rotation.y += 0.002;
+
+				if ( up == 0 )
+				{
+					base.rotation.z += 0.0010;
+					if ( base.rotation.z > 0.18 )
+					{
+						up = 1;
+					}
+				}
+				else
+				{
+					base.rotation.z -= 0.0010;
+					if ( base.rotation.z < -0.18 )
+					{
+						up = 0;
+					}	
+				}
+
+				h = ( 360 * ( 1.0 + time*10 ) % 360 ) / 360;
+				//h = h*h;
+
+				for ( i = 0; i < numLights; i ++ )
+				{
+					lightsGeometry.colors[i].setHSL(h, 1.0, 0.6);
+				}
+
+				teeterLight.color.setHSL(h, 1.0, 0.6);
+				boomLight3.color.setHSL(h, 1.0, 0.6);
+				boomLight4.color.setHSL(h, 1.0, 0.6);
+				boomLight5.color.setHSL(h, 1.0, 0.6);
+				boomLight6.color.setHSL(h, 1.0, 0.6);
+				
+				teeterLight.colorsNeedUpdate = true;
+				boomLight3.colorsNeedUpdate = true;
+				boomLight4.colorsNeedUpdate = true;
+				boomLight5.colorsNeedUpdate = true;
+				boomLight6.colorsNeedUpdate = true;
+
+				lightsGeometry.colorsNeedUpdate =true;
+
+				renderer.render(scene, camera);
+//				composer.render( 0.01 );
+			};
+
+			animate();
+		</script>
+	</body>
+</html>
